@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-800 antialiased;
+  }
+
+  /* Dark mode styles */
+  html.dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
+@layer components {
+  .card-wood {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-200;
+  }
+
+  html.dark .card-wood {
+    @apply bg-gray-800 border-gray-700 shadow-gray-900/50;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white px-6 py-3 rounded-xl font-medium
+           hover:bg-blue-700 transition-all duration-200
+           shadow-md hover:shadow-lg active:scale-95;
+  }
+
+  html.dark .btn-primary {
+    @apply bg-blue-500 hover:bg-blue-400;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium
+           hover:bg-gray-300 hover:text-gray-800 transition-all duration-200
+           shadow-md hover:shadow-lg active:scale-95;
+  }
+
+  html.dark .btn-secondary {
+    @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200
+           focus:border-blue-500 focus:outline-none
+           bg-white text-gray-800 placeholder-gray-400
+           transition-all duration-200;
+  }
+
+  html.dark .input-field {
+    @apply bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500
+           focus:border-blue-400;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl
+           text-gray-400 hover:text-white hover:bg-gray-700/50
+           transition-all duration-200 cursor-pointer;
+  }
+
+  .sidebar-item.active {
+    @apply bg-blue-600 text-white;
+  }
+
+  html.dark .sidebar-item.active {
+    @apply bg-blue-500;
+  }
+}
+
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+html.dark .skeleton {
+  @apply bg-gray-700;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
