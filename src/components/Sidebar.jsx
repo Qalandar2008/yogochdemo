@@ -1,21 +1,46 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from '../hooks/useTranslation';
-import { LayoutDashboard, Package, BarChart3, LogOut, TreePine, X, Menu } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Package, BarChart3, LogOut, TreePine, X, Menu, UserPlus, HandCoins, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const { logout, user } = useAuth();
   const location = useLocation();
+  const [superUserForm, setSuperUserForm] = useState({ username: '', password: '' });
+  const [superUserMessage, setSuperUserMessage] = useState('');
+  const [superUserError, setSuperUserError] = useState('');
+  const [isCreatingSuperuser, setIsCreatingSuperuser] = useState(false);
+  const [isSuperuserOpen, setIsSuperuserOpen] = useState(false);
+  const [showSuperuserPassword, setShowSuperuserPassword] = useState(false);
 
   const menuItems = [
     { path: '/admin', icon: LayoutDashboard, label: t('nav.dashboard') },
     { path: '/admin/products', icon: Package, label: t('nav.products') },
     { path: '/admin/stats', icon: BarChart3, label: t('nav.stats') },
+    { path: '/admin/debts', icon: HandCoins, label: t('nav.debts') || 'Qarz bo\'limi' },
   ];
 
   const handleLinkClick = () => {
     if (onClose) onClose();
+  };
+
+  const handleCreateSuperuser = async (e) => {
+    e.preventDefault();
+    setSuperUserError('');
+    setSuperUserMessage('');
+    setIsCreatingSuperuser(true);
+    try {
+      const result = await api.createSuperuser(superUserForm);
+      setSuperUserMessage(result.message || 'Superuser yaratildi');
+      setSuperUserForm({ username: '', password: '' });
+    } catch (error) {
+      setSuperUserError(error.message);
+    } finally {
+      setIsCreatingSuperuser(false);
+    }
   };
 
   return (
@@ -78,6 +103,74 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       {/* User & Logout */}
       <div className="p-3 sm:p-4 border-t border-gray-700">
+        {user?.is_superuser && (
+          <div className="mb-4 rounded-xl bg-gray-700/40 border border-gray-600 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsSuperuserOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 text-white text-sm font-semibold hover:bg-gray-700/50 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Superuser boshqaruvi
+              </span>
+              {isSuperuserOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {isSuperuserOpen && (
+              <form onSubmit={handleCreateSuperuser} className="p-3 pt-2 space-y-2 border-t border-gray-600/70">
+                <div className="text-xs text-gray-300 leading-snug">
+                  Bu bo‘lim orqali yangi superuser yaratishingiz mumkin.
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-gray-300 mb-1">Login</label>
+                  <input
+                    type="text"
+                    value={superUserForm.username}
+                    onChange={(e) => setSuperUserForm({ ...superUserForm, username: e.target.value })}
+                    placeholder="masalan: admin2"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-600 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-gray-300 mb-1">Parol</label>
+                  <div className="relative">
+                    <input
+                      type={showSuperuserPassword ? 'text' : 'password'}
+                      value={superUserForm.password}
+                      onChange={(e) => setSuperUserForm({ ...superUserForm, password: e.target.value })}
+                      placeholder="Kuchli parol kiriting"
+                      className="w-full pr-10 px-3 py-2 rounded-lg bg-gray-800 border border-gray-600 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSuperuserPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-white rounded"
+                      title={showSuperuserPassword ? 'Yashirish' : 'Ko‘rsatish'}
+                    >
+                      {showSuperuserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {superUserMessage && <p className="text-xs text-green-400">{superUserMessage}</p>}
+                {superUserError && <p className="text-xs text-red-400">{superUserError}</p>}
+
+                <button
+                  type="submit"
+                  disabled={isCreatingSuperuser}
+                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium"
+                >
+                  {isCreatingSuperuser ? 'Yaratilmoqda...' : 'Superuser qo‘shish'}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
         <div className="mb-3 sm:mb-4 px-3 sm:px-4">
           <p className="text-sm text-gray-300 truncate">{user?.username}</p>
           <p className="text-xs text-gray-500 capitalize">{user?.role}</p>

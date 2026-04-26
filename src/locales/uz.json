@@ -8,6 +8,7 @@
     "dashboard": "Boshqaruv paneli",
     "products": "Mahsulotlar",
     "stats": "Statistika",
+    "debts": "Qarz bo'limi",
     "login": "Kirish",
     "logout": "Chiqish"
   },
@@ -15,7 +16,7 @@
     "title": "Yog'och Inventory System",
     "subtitle": "Professional yog'och mahsulotlari boshqaruv tizimi",
     "previewMode": "Ko'rik rejimi",
-    "previewDescription": "Barcha ma'lumotlar 0. Admin paneliga kirish uchun tizimga kiring.",
+    "previewDescription": "Barcha ma'lumotlar. Admin paneliga kirish uchun tizimga kiring.",
     "loginButton": "Login (Admin paneliga kirish)"
   },
   "login": {
@@ -42,9 +43,9 @@
     "totalVolume": "Jami kub",
     "soldQuantity": "Sotilgan dona",
     "profit": "Foyda",
-    "length": "Uzunlik",
+    "length": "Bo'y",
     "width": "Eni",
-    "height": "Balandlik",
+    "height": "Qalinlik",
     "volume": "Hajm",
     "total": "Jami",
     "sold": "Sotilgan",
