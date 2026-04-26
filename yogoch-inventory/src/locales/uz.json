@@ -1,0 +1,87 @@
+{
+  "app": {
+    "name": "Yog'och Inventory",
+    "tagline": "Yog'och mahsulotlari boshqaruv tizimi"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "dashboard": "Boshqaruv paneli",
+    "products": "Mahsulotlar",
+    "stats": "Statistika",
+    "debts": "Qarz bo'limi",
+    "login": "Kirish",
+    "logout": "Chiqish"
+  },
+  "home": {
+    "title": "Yog'och Inventory System",
+    "subtitle": "Professional yog'och mahsulotlari boshqaruv tizimi",
+    "previewMode": "Ko'rik rejimi",
+    "previewDescription": "Barcha ma'lumotlar. Admin paneliga kirish uchun tizimga kiring.",
+    "loginButton": "Login (Admin paneliga kirish)"
+  },
+  "login": {
+    "title": "Tizimga kirish",
+    "subtitle": "Admin paneliga kirish uchun ma'lumotlaringizni kiriting",
+    "username": "Foydalanuvchi nomi",
+    "password": "Parol",
+    "usernamePlaceholder": "Foydalanuvchi nomini kiriting",
+    "passwordPlaceholder": "Parolni kiriting",
+    "submit": "Kirish",
+    "error": "Noto'g'ri foydalanuvchi nomi yoki parol"
+  },
+  "dashboard": {
+    "title": "Boshqaruv paneli",
+    "welcome": "Xush kelibsiz",
+    "overview": "Umumiy ko'rinish"
+  },
+  "stats": {
+    "totalProducts": "Tovarlar soni",
+    "productSizes": "Razmerlar",
+    "quantityInStock": "Ombordagi dona",
+    "purchasePrice": "Kirish narxi",
+    "volumeTracking": "Hajm kuzatuvi",
+    "totalVolume": "Jami kub",
+    "soldQuantity": "Sotilgan dona",
+    "profit": "Foyda",
+    "length": "Bo'y",
+    "width": "Eni",
+    "height": "Qalinlik",
+    "volume": "Hajm",
+    "total": "Jami",
+    "sold": "Sotilgan",
+    "available": "Mavjud",
+    "soldVolume": "Sotilgan kub",
+    "addSize": "Razmer qo'shish"
+  },
+  "products": {
+    "title": "Mahsulotlar",
+    "addNew": "Yangi qo'shish",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "addSize": "Razmer qo'shish",
+    "search": "Qidirish...",
+    "filter": "Filtrlash",
+    "name": "Nomi",
+    "quantity": "Soni",
+    "price": "Narxi",
+    "actions": "Amallar",
+    "noProducts": "Mahsulotlar topilmadi"
+  },
+  "language": {
+    "title": "Til",
+    "uzLatin": "O'zbek tili (Lotin)",
+    "uzCyrillic": "O'zbek tili (Kiril)"
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinish",
+    "close": "Yopish",
+    "confirm": "Tasdiqlash",
+    "cancel": "Bekor qilish",
+    "downloadReport": "Hisobotni yuklash",
+    "downloading": "Yuklanmoqda..."
+  }
+}

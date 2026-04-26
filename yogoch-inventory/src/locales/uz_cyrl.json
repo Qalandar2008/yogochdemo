@@ -1,0 +1,86 @@
+{
+  "app": {
+    "name": "Ёғоч Inventory",
+    "tagline": "Ёғоч маҳсулотлари бошқарув тизими"
+  },
+  "nav": {
+    "home": "Бош саҳифа",
+    "dashboard": "Бошқарув панели",
+    "products": "Маҳсулотлар",
+    "stats": "Статистика",
+    "debts": "Қарз бўлими",
+    "login": "Кириш",
+    "logout": "Чиқиш"
+  },
+  "home": {
+    "title": "Ёғоч Inventory System",
+    "subtitle": "Профессионал ёғоч маҳсулотлари бошқарув тизими",
+    "previewMode": "Кўрик режими",
+    "previewDescription": "Барча маълумотлар. Админ панелига кириш учун тизимга киринг.",
+    "loginButton": "Логин (Админ панелига кириш)"
+  },
+  "login": {
+    "title": "Тизимга кириш",
+    "subtitle": "Админ панелига кириш учун маълумотларингизни киритинг",
+    "username": "Фойдаланувчи номи",
+    "password": "Парол",
+    "usernamePlaceholder": "Фойдаланувчи номини киритинг",
+    "passwordPlaceholder": "Паролни киритинг",
+    "submit": "Кириш",
+    "error": "Нотўғри фойдаланувчи номи ёки парол"
+  },
+  "dashboard": {
+    "title": "Бошқарув панели",
+    "welcome": "Хуш келибсиз",
+    "overview": "Умумий кўриниш"
+  },
+  "stats": {
+    "totalProducts": "Товарлар сони",
+    "productSizes": "Размерлар",
+    "quantityInStock": "Омбордаги дона",
+    "purchasePrice": "Кириш нархи",
+    "volumeTracking": "Ҳажм кузатуви",
+    "totalVolume": "Жами куб",
+    "soldQuantity": "Сотилган дона",
+    "profit": "Фойда",
+    "length": "Бўй",
+    "width": "Ени",
+    "height": "Қалинлик",
+    "volume": "Ҳажм",
+    "total": "Жами",
+    "sold": "Сотилган",
+    "available": "Мавжуд",
+    "soldVolume": "Сотилган куб",
+    "addSize": "Размер қўшиш"
+  },
+  "products": {
+    "title": "Маҳсулотлар",
+    "addNew": "Янги қўшиш",
+    "edit": "Таҳрирлаш",
+    "delete": "Ўчириш",
+    "save": "Сақлаш",
+    "cancel": "Бекор қилиш",
+    "search": "Қидириш...",
+    "filter": "Филтрлаш",
+    "name": "Номи",
+    "quantity": "Сони",
+    "price": "Нархи",
+    "actions": "Амаллар",
+    "noProducts": "Маҳсулотлар топилмади"
+  },
+  "language": {
+    "title": "Тил",
+    "uzLatin": "Ўзбек тили (Лотин)",
+    "uzCyrillic": "Ўзбек тили (Кирил)"
+  },
+  "common": {
+    "loading": "Юкланмоқда...",
+    "error": "Хатолик юз берди",
+    "retry": "Қайта уришиш",
+    "close": "Ёпиш",
+    "confirm": "Тасдиқлаш",
+    "cancel": "Бекор қилиш",
+    "downloadReport": "Ҳисоботни юклаш",
+    "downloading": "Юкланмоқда..."
+  }
+}

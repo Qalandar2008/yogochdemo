@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: yogoch-backend
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput && python backend/manage.py migrate
+    startCommand: gunicorn config.wsgi:application --chdir backend --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_TIME_ZONE
+        value: "UTC"
+      # Add your Vercel domain after you deploy frontend:
+      # e.g. https://yogoch-inventory.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://localhost:5173,http://127.0.0.1:5173"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: ""
+      # You MUST set a real secret in Render dashboard:
+      # DJANGO_SECRET_KEY
+      # Render Postgres will provide:
+      # DATABASE_URL
