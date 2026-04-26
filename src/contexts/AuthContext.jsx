@@ -1,9 +1,11 @@
 import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = 'yogoch_token';
 const USER_KEY = 'yogoch_user';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -28,22 +30,22 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (username, password) => {
     try {
-      // Mock API call - replace with real API
-      if (username === 'admin' && password === 'admin') {
-        const mockUser = { username: 'admin', role: 'admin' };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        
-        localStorage.setItem(TOKEN_KEY, mockToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-        
-        setUser(mockUser);
-        setIsAuthenticated(true);
-        return { success: true };
-      }
+      const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
+        username,
+        password
+      });
       
-      return { success: false, error: 'Invalid credentials' };
+      const { token, user } = response.data;
+      
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      
+      setUser(user);
+      setIsAuthenticated(true);
+      return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      const message = error.response?.data?.error || 'Login failed';
+      return { success: false, error: message };
     }
   }, []);
 

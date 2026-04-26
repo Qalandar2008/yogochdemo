@@ -6,7 +6,7 @@ import Card from '../../components/Card';
 import DataTable from '../../components/DataTable';
 import api from '../../services/api';
 import { 
-  Package, Boxes, DollarSign, 
+  Package, Boxes, 
   BarChart3, Scale, ShoppingCart, TrendingUp, TrendingDown,
   Layers, Ruler, Download
 } from 'lucide-react';
@@ -21,12 +21,13 @@ const AdminDashboard = () => {
 
   const handleDownloadReport = async () => {
     setIsDownloading(true);
-    // Backend integration will be added here
-    // For now, just simulate a delay
-    setTimeout(() => {
+    try {
+      await api.exportExcel();
+    } catch (err) {
+      setError(`Hisobot yuklashda xatolik: ${err.message}`);
+    } finally {
       setIsDownloading(false);
-      alert('Excel hisobot yuklash funksiyasi tez orada qo\'shiladi!');
-    }, 1500);
+    }
   };
 
   const loadData = useCallback(async () => {
@@ -66,7 +67,6 @@ const AdminDashboard = () => {
   const statsConfig = [
     { key: 'totalProducts', title: t('stats.totalProducts'), icon: Package, color: 'blue' },
     { key: 'totalQuantity', title: t('stats.quantityInStock'), icon: Boxes, color: 'gray' },
-    { key: 'avgPrice', title: t('stats.purchasePrice'), icon: DollarSign, color: 'blue', unit: 'so\'m' },
     { key: 'totalVolume', title: t('stats.totalVolume'), icon: Scale, color: 'blue', unit: 'm³' },
     { key: 'totalSoldQuantity', title: t('stats.soldQuantity'), icon: ShoppingCart, color: 'gray' },
     { key: 'totalSoldVolume', title: t('stats.soldVolume'), icon: BarChart3, color: 'blue', unit: 'm³' },

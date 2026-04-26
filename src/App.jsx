@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Products from './pages/admin/Products';
 import Stats from './pages/admin/Stats';
+import Debts from './pages/admin/Debts';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<Products />} />
               <Route path="stats" element={<Stats />} />
+              <Route path="debts" element={<Debts />} />
             </Route>
           </Routes>
         </Router>

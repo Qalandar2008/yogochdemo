@@ -8,9 +8,10 @@ import Card from '../components/Card';
 import LanguageSelector from '../components/LanguageSelector';
 import api from '../services/api';
 import {
-  Package, Ruler, Boxes, DollarSign,
+  Package, Ruler, Boxes,
   BarChart3, Scale, ShoppingCart, TrendingUp,
-  TreePine, Lock, LogIn, Sun, Moon, RefreshCw
+  TreePine, Lock, LogIn, Sun, Moon, RefreshCw,
+  Archive, PieChart, TrendingDown
 } from 'lucide-react';
 
 const Home = () => {
@@ -54,7 +55,6 @@ const Home = () => {
   const statsConfig = [
     { key: 'totalProducts', title: t('stats.totalProducts'), icon: Package, color: 'blue' },
     { key: 'totalQuantity', title: t('stats.quantityInStock'), icon: Boxes, color: 'gray' },
-    { key: 'avgPrice', title: t('stats.purchasePrice'), icon: DollarSign, color: 'blue', unit: 'so\'m' },
     { key: 'totalVolume', title: t('stats.totalVolume'), icon: Scale, color: 'blue', unit: 'm³' },
     { key: 'totalSoldQuantity', title: t('stats.soldQuantity'), icon: ShoppingCart, color: 'gray' },
     { key: 'totalSoldVolume', title: t('stats.soldVolume'), icon: BarChart3, color: 'blue', unit: 'm³' },
@@ -241,6 +241,80 @@ const Home = () => {
             </p>
             <p className="text-blue-100 text-sm mt-2">{t('home.previewMode')}</p>
           </div>
+        </div>
+
+        {/* Extra Summary Cards (same indicators as Admin/Stats) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-6">
+          <Card title="Ombor holati" icon={Archive}>
+            {isLoading ? (
+              <div className="h-28 skeleton rounded-xl"></div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Jami mahsulotlar</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">{stats?.totalProducts || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Ombordagi dona</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">{stats?.totalQuantity || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sotilgan dona</span>
+                  <span className="font-semibold text-gray-500 dark:text-gray-500">{stats?.totalSoldQuantity || 0}</span>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          <Card title="Hajm tahlili" icon={PieChart}>
+            {isLoading ? (
+              <div className="h-28 skeleton rounded-xl"></div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Jami hajm</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">{stats?.totalVolume?.toFixed(2) || 0} m³</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sotilgan hajm</span>
+                  <span className="font-semibold text-gray-500 dark:text-gray-500">{stats?.totalSoldVolume?.toFixed(2) || 0} m³</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Qolgan hajm</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    {(stats?.totalVolume - stats?.totalSoldVolume)?.toFixed(2) || 0} m³
+                  </span>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          <Card title="Moliyaviy ko'rsatkichlar" icon={TrendingDown}>
+            {isLoading ? (
+              <div className="h-28 skeleton rounded-xl"></div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sotishdan daromad</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    {stats?.totalRevenue?.toLocaleString() || 0} so'm
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sof foyda</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    +{stats?.totalProfit?.toLocaleString() || 0} so'm
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Ombor qiymati</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">
+                    {stats?.totalInventoryValue?.toLocaleString() || 0} so'm
+                  </span>
+                </div>
+              </div>
+            )}
+          </Card>
         </div>
       </main>
 

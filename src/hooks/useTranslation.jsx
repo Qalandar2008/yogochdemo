@@ -16,7 +16,7 @@ export const useTranslation = () => {
   });
 
   const [t, setT] = useState(translations[language]);
-  const { triggerRefresh } = useRefresh();
+  const { triggerRefresh, refreshTrigger } = useRefresh();
 
   useEffect(() => {
     setT(translations[language]);
@@ -24,6 +24,28 @@ export const useTranslation = () => {
     // Trigger refresh when language changes
     setTimeout(() => triggerRefresh('language'), 50);
   }, [language, triggerRefresh]);
+
+  // Keep all hook instances in sync (language selector, navbar, pages, etc.)
+  useEffect(() => {
+    const saved = localStorage.getItem(LANGUAGE_KEY) || 'uz';
+    if (saved !== language && translations[saved]) {
+      setLanguage(saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
+
+  // Sync across tabs/windows
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== LANGUAGE_KEY) return;
+      const next = e.newValue || 'uz';
+      if (next !== language && translations[next]) {
+        setLanguage(next);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [language]);
 
   const setLang = useCallback((lang) => {
     if (translations[lang]) {

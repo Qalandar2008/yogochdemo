@@ -5,7 +5,7 @@ import { useRefresh } from '../../contexts/RefreshContext';
 import Card from '../../components/Card';
 import DataTable from '../../components/DataTable';
 import api from '../../services/api';
-import { Package, Plus, Pencil, Trash2, X, Check, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Minus, Pencil, Trash2, X, Check, AlertTriangle } from 'lucide-react';
 
 const Products = () => {
   const { t } = useTranslation();
@@ -16,13 +16,30 @@ const Products = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [stockAction, setStockAction] = useState(null); // 'restock' | 'sell'
+  const [stockProduct, setStockProduct] = useState(null);
+  const [stockForm, setStockForm] = useState({ quantity: '', price: '', occurredAt: '' });
   const [formData, setFormData] = useState({
     name: '',
-    quantity: 0,
-    purchasePrice: 0,
-    soldQuantity: 0,
-    sizes: [{ length: 0, width: 0, height: 0, volume: 0 }]
+    quantity: '',
+    purchasePrice: '',
+    occurredAt: '',
+    sizes: [{ length: '', width: '', height: '', volume: 0 }]
   });
+  const [error, setError] = useState(null);
+
+  const normalizeDigits = (value) => String(value || '').replace(/\D/g, '');
+  const getNowLocalDateTime = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60 * 1000);
+    return local.toISOString().slice(0, 16);
+  };
+  const formatThousands = (value) => {
+    const digits = normalizeDigits(value);
+    if (!digits) return '';
+    return Number(digits).toLocaleString('uz-UZ');
+  };
 
   const loadProducts = useCallback(async () => {
     // Don't refresh if modal is open to avoid disrupting user
@@ -56,10 +73,10 @@ const Products = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
-      quantity: 0,
-      purchasePrice: 0,
-      soldQuantity: 0,
-      sizes: [{ length: 0, width: 0, height: 0, volume: 0 }]
+      quantity: '',
+      purchasePrice: '',
+      occurredAt: getNowLocalDateTime(),
+      sizes: [{ length: '', width: '', height: '', volume: 0 }]
     });
     setIsModalOpen(true);
   };
@@ -70,8 +87,8 @@ const Products = () => {
       name: product.name,
       quantity: product.quantity,
       purchasePrice: product.purchasePrice,
-      soldQuantity: product.soldQuantity,
-      sizes: product.sizes.length > 0 ? product.sizes : [{ length: 0, width: 0, height: 0, volume: 0 }]
+      occurredAt: product.occurredAt ? String(product.occurredAt).slice(0, 16) : getNowLocalDateTime(),
+      sizes: product.sizes.length > 0 ? product.sizes : [{ length: '', width: '', height: '', volume: 0 }]
     });
     setIsModalOpen(true);
   };
@@ -102,23 +119,30 @@ const Products = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    
     try {
-      // Calculate volume and totals
-      const sizesWithVolume = formData.sizes.map(size => ({
-        ...size,
-        volume: size.length * size.width * size.height
-      }));
+      // Calculate volume and totals - convert width and height from cm to meters
+      const sizesWithVolume = formData.sizes.map(size => {
+        const length = parseFloat(size.length) || 0;
+        const width = parseFloat(size.width) || 0;
+        const height = parseFloat(size.height) || 0;
+        const widthInMeters = width / 100;
+        const heightInMeters = height / 100;
+        return {
+          ...size,
+          length,
+          width,
+          height,
+          volume: length * widthInMeters * heightInMeters
+        };
+      });
       
       const totalVolume = sizesWithVolume.reduce((acc, s) => acc + s.volume, 0) * formData.quantity;
-      const soldVolume = sizesWithVolume.reduce((acc, s) => acc + s.volume, 0) * formData.soldQuantity;
-      const profit = formData.soldQuantity * formData.purchasePrice * 0.3; // 30% profit margin
-
       const productData = {
         ...formData,
         sizes: sizesWithVolume,
-        totalVolume,
-        soldVolume,
-        profit
+        totalVolume
       };
 
       if (editingProduct) {
@@ -128,18 +152,62 @@ const Products = () => {
       }
       
       setIsModalOpen(false);
+      setError(null);
       loadProducts();
       // Trigger global refresh for other pages
       triggerRefresh(editingProduct ? 'edit' : 'create');
-    } catch (error) {
-      console.error('Error saving product:', error);
+    } catch (err) {
+      console.error('Error saving product:', err);
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          'Mahsulot saqlashda xatolik yuz berdi';
+      setError(errorMessage);
+    }
+  };
+
+  const openStockActionModal = (product, action) => {
+    setStockProduct(product);
+    setStockAction(action);
+    setStockForm({ quantity: '', price: '', occurredAt: getNowLocalDateTime() });
+    setError(null);
+  };
+
+  const closeStockActionModal = () => {
+    setStockProduct(null);
+    setStockAction(null);
+    setStockForm({ quantity: '', price: '', occurredAt: '' });
+  };
+
+  const submitStockAction = async () => {
+    if (!stockProduct || !stockAction) return;
+    setError(null);
+    try {
+      if (stockAction === 'restock') {
+        await api.restockProduct(stockProduct.id, {
+          quantity: stockForm.quantity,
+          purchasePrice: stockForm.price,
+          occurredAt: stockForm.occurredAt
+        });
+      } else {
+        await api.sellProduct(stockProduct.id, {
+          quantity: stockForm.quantity,
+          salePrice: stockForm.price,
+          occurredAt: stockForm.occurredAt
+        });
+      }
+      closeStockActionModal();
+      loadProducts();
+      triggerRefresh(stockAction);
+    } catch (err) {
+      setError(err.message || 'Amalni bajarishda xatolik yuz berdi');
     }
   };
 
   const addSize = () => {
     setFormData({
       ...formData,
-      sizes: [...formData.sizes, { length: 0, width: 0, height: 0, volume: 0 }]
+      sizes: [...formData.sizes, { length: '', width: '', height: '', volume: 0 }]
     });
   };
 
@@ -154,7 +222,10 @@ const Products = () => {
     const newSizes = formData.sizes.map((size, i) => {
       if (i === index) {
         const updated = { ...size, [field]: parseFloat(value) || 0 };
-        updated.volume = updated.length * updated.width * updated.height;
+        // Convert width and height from cm to meters for calculation
+        const widthInMeters = updated.width / 100;
+        const heightInMeters = updated.height / 100;
+        updated.volume = updated.length * widthInMeters * heightInMeters;
         return updated;
       }
       return size;
@@ -165,16 +236,22 @@ const Products = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingProduct(null);
+    setError(null);
   };
 
   const handleSizeChange = (index, field, value) => {
     const newSizes = [...formData.sizes];
     newSizes[index] = {
       ...newSizes[index],
-      [field]: parseFloat(value) || 0
+      [field]: value === '' ? '' : parseFloat(value) || 0
     };
-    // Recalculate volume
-    newSizes[index].volume = newSizes[index].length * newSizes[index].width * newSizes[index].height;
+    // Recalculate volume - convert width and height from cm to meters
+    const length = parseFloat(newSizes[index].length) || 0;
+    const width = parseFloat(newSizes[index].width) || 0;
+    const height = parseFloat(newSizes[index].height) || 0;
+    const widthInMeters = width / 100;
+    const heightInMeters = height / 100;
+    newSizes[index].volume = length * widthInMeters * heightInMeters;
     setFormData({ ...formData, sizes: newSizes });
   };
 
@@ -194,7 +271,11 @@ const Products = () => {
     { 
       key: 'soldQuantity', 
       label: t('stats.soldQuantity'),
-      render: (qty, row) => `${qty} (${((qty / (qty + row.quantity)) * 100).toFixed(1)}%)`
+      render: (qty, row) => {
+        const total = qty + row.quantity;
+        const percent = total > 0 ? ((qty / total) * 100).toFixed(1) : '0.0';
+        return `${qty} (${percent}%)`;
+      }
     },
     {
       key: 'actions',
@@ -216,6 +297,40 @@ const Products = () => {
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
+      )
+    }
+  ];
+
+  const incomingColumns = [
+    { key: 'name', label: t('products.name') },
+    { key: 'quantity', label: t('products.quantity') },
+    {
+      key: 'actions',
+      label: 'Amal',
+      render: (_, row) => (
+        <button
+          onClick={() => openStockActionModal(row, 'restock')}
+          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+        >
+          <Plus className="w-4 h-4" /> Qo'shish
+        </button>
+      )
+    }
+  ];
+
+  const soldColumns = [
+    { key: 'name', label: t('products.name') },
+    { key: 'quantity', label: 'Omborda qoldi' },
+    {
+      key: 'actions',
+      label: 'Amal',
+      render: (_, row) => (
+        <button
+          onClick={() => openStockActionModal(row, 'sell')}
+          className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm"
+        >
+          <Minus className="w-4 h-4" /> Sotish
+        </button>
       )
     }
   ];
@@ -242,6 +357,32 @@ const Products = () => {
           emptyMessage={t('products.noProducts')}
         />
       </Card>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+        <Card title="Olib kelingan mahsulotlar" icon={Plus}>
+          <DataTable
+            columns={incomingColumns}
+            data={products}
+            isLoading={isLoading}
+            searchable={false}
+            pagination={false}
+            mobileCardView={false}
+            emptyMessage={t('products.noProducts')}
+          />
+        </Card>
+
+        <Card title="Sotilgan mahsulotlar" icon={Minus}>
+          <DataTable
+            columns={soldColumns}
+            data={products}
+            isLoading={isLoading}
+            searchable={false}
+            pagination={false}
+            mobileCardView={false}
+            emptyMessage={t('products.noProducts')}
+          />
+        </Card>
+      </div>
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
@@ -298,6 +439,13 @@ const Products = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('products.name')}
@@ -311,7 +459,7 @@ const Products = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('stats.quantityInStock')}
@@ -327,30 +475,33 @@ const Products = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('stats.purchasePrice')}
+                    {t('stats.purchasePrice')}(so'm)
                   </label>
                   <input
-                    type="number"
-                    value={formData.purchasePrice}
-                    onChange={(e) => setFormData({ ...formData, purchasePrice: parseInt(e.target.value) || 0 })}
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.purchasePrice ? Number(formData.purchasePrice).toLocaleString('uz-UZ') : ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, purchasePrice: normalizeDigits(e.target.value) });
+                    }}
                     className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
-                    min="0"
+                    placeholder="0"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('stats.soldQuantity')}
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.soldQuantity}
-                    onChange={(e) => setFormData({ ...formData, soldQuantity: parseInt(e.target.value) || 0 })}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
-                    min="0"
-                    required
-                  />
-                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sana va vaqt
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.occurredAt}
+                  onChange={(e) => setFormData({ ...formData, occurredAt: e.target.value })}
+                  className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
+                  required
+                />
               </div>
 
               {/* Sizes */}
@@ -365,8 +516,8 @@ const Products = () => {
                     {/* Size Labels */}
                     <div className="grid grid-cols-3 gap-2 mb-1">
                       <span className="text-xs text-gray-500 dark:text-gray-400">{t('stats.length')} (m)</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('stats.width')} (m)</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('stats.height')} (m)</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('stats.width')} (sm)</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('stats.height')} (sm)</span>
                     </div>
                     {/* Size Inputs */}
                     <div className="flex gap-2 items-end">
@@ -374,7 +525,7 @@ const Products = () => {
                         <input
                           type="number"
                           step="0.01"
-                          placeholder="0"
+                          placeholder=""
                           value={size.length}
                           onChange={(e) => handleSizeChange(index, 'length', e.target.value)}
                           className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
@@ -384,7 +535,7 @@ const Products = () => {
                         <input
                           type="number"
                           step="0.01"
-                          placeholder="0"
+                          placeholder=""
                           value={size.width}
                           onChange={(e) => handleSizeChange(index, 'width', e.target.value)}
                           className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
@@ -394,14 +545,14 @@ const Products = () => {
                         <input
                           type="number"
                           step="0.01"
-                          placeholder="0"
+                          placeholder=""
                           value={size.height}
                           onChange={(e) => handleSizeChange(index, 'height', e.target.value)}
                           className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 transition-colors"
                         />
                       </div>
                       <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 min-w-[90px] text-center font-medium border border-gray-200 dark:border-gray-600">
-                        {(size.volume || 0).toFixed(4)} m³
+                        {size.volume === 0 ? '0m³' : Number.isInteger(size.volume) ? `${size.volume}m³` : `${size.volume.toFixed(2)}m³`}
                       </div>
                       {formData.sizes.length > 1 && (
                         <button
@@ -442,6 +593,75 @@ const Products = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {stockAction && stockProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl">
+            <div className="p-5 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                {stockAction === 'restock' ? 'Olib kelingan mahsulotlar' : 'Sotilgan mahsulotlar'}
+              </h3>
+              <button onClick={closeStockActionModal} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Mahsulot: <strong>{stockProduct.name}</strong>
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Soni</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatThousands(stockForm.quantity)}
+                  onChange={(e) => setStockForm({ ...stockForm, quantity: normalizeDigits(e.target.value) })}
+                  className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {stockAction === 'restock' ? 'Kirish narxi (so\'m)' : 'Sotilgan narxi (so\'m)'}
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatThousands(stockForm.price)}
+                  onChange={(e) => setStockForm({ ...stockForm, price: normalizeDigits(e.target.value) })}
+                  className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sana va vaqt
+                </label>
+                <input
+                  type="datetime-local"
+                  value={stockForm.occurredAt}
+                  onChange={(e) => setStockForm({ ...stockForm, occurredAt: e.target.value })}
+                  className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeStockActionModal}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 rounded-lg"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="button"
+                  onClick={submitStockAction}
+                  className={`flex-1 px-4 py-2.5 text-white rounded-lg ${stockAction === 'restock' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}`}
+                >
+                  Saqlash
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

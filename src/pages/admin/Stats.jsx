@@ -6,39 +6,52 @@ import StatsBox from '../../components/StatsBox';
 import DataTable from '../../components/DataTable';
 import api from '../../services/api';
 import { 
-  Package, Boxes, DollarSign, Scale, 
+  Package, Boxes, Scale, 
   ShoppingCart, TrendingUp, BarChart3,
-  PieChart, TrendingDown, Archive, Download
+  PieChart, TrendingDown, Archive, Download,
+  AlertTriangle
 } from 'lucide-react';
 
 const Stats = () => {
   const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleDownloadReport = async () => {
     setIsDownloading(true);
-    // Backend integration will be added here
-    // For now, just simulate a delay
-    setTimeout(() => {
+    try {
+      await api.exportExcel();
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Hisobot yuklashda xatolik yuz berdi');
+    } finally {
       setIsDownloading(false);
-      alert('Excel hisobot yuklash funksiyasi tez orada qo\'shiladi!');
-    }, 1500);
+    }
   };
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const [statsData, productsData] = await Promise.all([
         api.getStats(),
         api.getProducts()
       ]);
+      const transactionsData = await api.getTransactions();
       setStats(statsData);
       setProducts(productsData);
-    } catch (error) {
-      console.error('Error loading data:', error);
+      setTransactions(transactionsData);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          'Ma\'lumotlarni yuklashda xatolik';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -60,8 +73,6 @@ const Stats = () => {
   const mainStats = [
     { key: 'totalProducts', title: t('stats.totalProducts'), icon: Package, color: 'blue' },
     { key: 'totalQuantity', title: t('stats.quantityInStock'), icon: Boxes, color: 'gray' },
-    { key: 'avgPrice', title: 'O\'rtacha narx', icon: DollarSign, color: 'blue', unit: 'so\'m' },
-    { key: 'totalProfit', title: t('stats.profit'), icon: TrendingUp, color: 'blue', unit: 'so\'m' },
   ];
 
   const volumeStats = [
@@ -117,6 +128,41 @@ const Stats = () => {
     },
   ];
 
+  const incomingTransactions = transactions.filter((t) => t.type === 'IN');
+  const outgoingTransactions = transactions.filter((t) => t.type === 'OUT');
+
+  const incomingColumns = [
+    { key: 'productName', label: t('products.name') },
+    { key: 'quantity', label: 'Soni' },
+    { key: 'unitPrice', label: 'Narx', render: (v) => `${v.toLocaleString()} so'm` },
+    {
+      key: 'occurredAt',
+      label: 'Sana',
+      render: (v) => new Date(v).toLocaleDateString('uz-UZ')
+    },
+    {
+      key: 'occurredAt',
+      label: 'Soat',
+      render: (v) => new Date(v).toLocaleTimeString('uz-UZ')
+    }
+  ];
+
+  const outgoingColumns = [
+    { key: 'productName', label: t('products.name') },
+    { key: 'quantity', label: 'Sotilgan soni' },
+    { key: 'unitPrice', label: 'Sotilgan narx', render: (v) => `${v.toLocaleString()} so'm` },
+    {
+      key: 'occurredAt',
+      label: 'Sana',
+      render: (v) => new Date(v).toLocaleDateString('uz-UZ')
+    },
+    {
+      key: 'occurredAt',
+      label: 'Soat',
+      render: (v) => new Date(v).toLocaleTimeString('uz-UZ')
+    }
+  ];
+
   return (
     <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -134,19 +180,40 @@ const Stats = () => {
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400">
+          <AlertTriangle className="w-6 h-6 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Xatolik yuz berdi</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        {mainStats.map((stat) => (
-          <StatsBox
-            key={stat.key}
-            title={stat.title}
-            value={stats?.[stat.key] || 0}
-            unit={stat.unit || ''}
-            icon={stat.icon}
-            color={stat.color}
-            isLoading={isLoading}
-          />
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 lg:col-span-2">
+          {mainStats.map((stat) => (
+            <StatsBox
+              key={stat.key}
+              title={stat.title}
+              value={stats?.[stat.key] || 0}
+              unit={stat.unit || ''}
+              icon={stat.icon}
+              color={stat.color}
+              isLoading={isLoading}
+            />
+          ))}
+        </div>
+        <StatsBox
+          title={t('stats.profit')}
+          value={stats?.totalProfit || 0}
+          unit="so'm"
+          icon={TrendingUp}
+          color="blue"
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Volume Stats Row */}
@@ -239,7 +306,7 @@ const Stats = () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Sotishdan daromad</span>
                 <span className="font-semibold text-blue-600 dark:text-blue-400">
-                  {(stats?.totalSoldQuantity * stats?.avgPrice)?.toLocaleString()} so'm
+                  {stats?.totalRevenue?.toLocaleString()} so'm
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -256,7 +323,7 @@ const Stats = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Ombor qiymati</span>
                   <span className="font-bold text-gray-800 dark:text-gray-200">
-                    {(stats?.totalQuantity * stats?.avgPrice)?.toLocaleString()} so'm
+                    {stats?.totalInventoryValue?.toLocaleString()} so'm
                   </span>
                 </div>
               </div>
@@ -274,6 +341,25 @@ const Stats = () => {
           searchPlaceholder={t('products.search')}
           emptyMessage={t('products.noProducts')}
         />
+      </Card>
+
+      <Card title="Ombor harakatlari tarixi" icon={BarChart3}>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <DataTable
+            columns={incomingColumns}
+            data={incomingTransactions}
+            isLoading={isLoading}
+            searchPlaceholder="Kirimni qidiring..."
+            emptyMessage="Kirim yo'q"
+          />
+          <DataTable
+            columns={outgoingColumns}
+            data={outgoingTransactions}
+            isLoading={isLoading}
+            searchPlaceholder="Chiqimni qidiring..."
+            emptyMessage="Chiqim yo'q"
+          />
+        </div>
       </Card>
     </div>
   );
